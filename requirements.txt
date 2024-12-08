@@ -1,0 +1,18 @@
+# Import Third-Party
+pandas
+google-cloud-bigquery
+google-cloud-pubsub
+google-cloud-secret-manager
+scipy
+pandas-ta
+requests
+datetime
+asyncio
+nest_asyncio
+websockets
+numpy==1.21.0
+
+# code formatting
+pylint
+pyarrow
+db-dtypes

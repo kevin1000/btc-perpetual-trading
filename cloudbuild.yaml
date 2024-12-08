@@ -1,0 +1,103 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: europe-west2
+
+steps:
+  # Log branch name
+  - id: 'branch name'
+    name: 'alpine'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+          echo "***********************"
+          echo "Branch Name: $BRANCH_NAME"
+          echo "***********************"
+
+    # Conditionally Create GCS Bucket if not exists
+  - id: 'create bucket'
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+          if ! gsutil ls -p $PROJECT_ID "gs://trading-etl-deribit-btc-perpetual-ao-signals-tf-state" > /dev/null 2>&1; then
+            echo "Bucket does not exist, creating now..."
+            gcloud storage buckets create "gs://trading-etl-deribit-btc-perpetual-ao-signals-tf-state" --location=${_REGION}
+          else
+            echo "Bucket already exists, skipping creation."
+          fi
+
+  # Initialize Terraform
+  - id: 'tf init'
+    name: 'hashicorp/terraform:0.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_project=$PROJECT_ID'
+      - 'TF_VAR_env=$BRANCH_NAME'
+      - 'TF_VAR_region=${_REGION}'
+    args:
+      - '-c'
+      - |
+          cd infra
+          terraform init -backend-config="prefix=env/${BRANCH_NAME}"
+
+  # Execute Terraform Plan
+  - id: 'tf plan'
+    name: 'hashicorp/terraform:0.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_project=$PROJECT_ID'
+      - 'TF_VAR_env=$BRANCH_NAME'
+      - 'TF_VAR_region=${_REGION}'
+    args:
+      - '-c'
+      - |
+          cd infra
+          terraform plan
+
+  # Apply Terraform Configuration
+  - id: 'tf apply'
+    name: 'hashicorp/terraform:0.14.1'
+    entrypoint: 'sh'
+    env:
+      - 'TF_VAR_project=$PROJECT_ID'
+      - 'TF_VAR_env=$BRANCH_NAME'
+      - 'TF_VAR_region=${_REGION}'
+    args:
+      - '-c'
+      - |
+          cd infra
+          terraform apply -auto-approve
+
+  # Run Unit Tests with PyTest
+  - id: 'pytest'
+    name: 'docker.io/library/python:3.10'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+          pip install -r requirements.txt
+
+  # Deploy Cloud Function
+  - id: 'deploy function'
+    name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - "functions"
+      - "deploy"
+      - "${BRANCH_NAME}-btc-perpetual-trading"
+      - "--trigger-topic"
+      - "${BRANCH_NAME}-trigger-cloud-func-trading-deribit-btc-perpetual-hourly"
+      - "--runtime"
+      - "python310"
+      - "--entry-point"
+      - "deribit_trading_btc_perpetual_ao_signal"
+      - "--region"
+      - "${_REGION}"
+      - "--memory"
+      - "512"
+      - "--set-env-vars"
+      - "ENV=${BRANCH_NAME},GCP_PROJECT=${PROJECT_ID}"
+
