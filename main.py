@@ -18,8 +18,8 @@ from deribit_utils.deribit_utils import (authenticate,get_available_balance_btc
 nest_asyncio.apply()
 
 # Create an instance of the GCPManager with the project ID where secrets are located
-secrets_project_id = "abracadata-316418"  # Replace with the actual project ID for secrets
-gcp_manager = GCPManager(project_id=secrets_project_id)
+project_id = "abracadata-316418"  # Replace with the actual project ID for secrets
+gcp_manager = GCPManager(project_id=project_id)
 
 # Access the secrets
 api_key = gcp_manager.access_secret_version(secret_id="BtcRider-api-key")
