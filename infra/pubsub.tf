@@ -11,3 +11,12 @@ resource "google_pubsub_topic" "trigger-cloud-func" {
     google_project_service.gcp_services,
   ]
 }
+
+
+resource "google_pubsub_subscription" "cloud_func_subscription" {
+     name  = "${var.env}-subscription-trading-deribit-btc-perpetual-hourly"
+     topic = google_pubsub_topic.trigger-cloud-func.name
+
+     project = var.project
+     ack_deadline_seconds = 20
+}

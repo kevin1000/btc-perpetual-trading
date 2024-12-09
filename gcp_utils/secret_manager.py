@@ -1,6 +1,6 @@
 # gcp_utils/secret_manager.py
 from google.cloud import secretmanager
-
+project_id = "abracadata-316418"  # Replace with the actual project ID for secrets
 class GCPManager:
     def __init__(self, project_id):
         self.client = secretmanager.SecretManagerServiceClient()
