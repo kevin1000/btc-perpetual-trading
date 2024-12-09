@@ -1,7 +1,6 @@
 # gcp_utils/secret_manager.py
 from google.cloud import secretmanager
 
-
 class GCPManager:
     def __init__(self, project_id):
         self.client = secretmanager.SecretManagerServiceClient()

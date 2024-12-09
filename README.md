@@ -1,4 +1,5 @@
-l` to generate entry and e# BTC Perpetual Trading Project
+# Trading BTC Perpetual Deribit 
+
 
 This repository contains the code for a system designed to generate trade signals for the Bitcoin perpetual futures market. These signals are then stored in a database.
 
